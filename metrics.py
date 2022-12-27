@@ -28,7 +28,12 @@ def display_and_save(framework:Framework,dataset_name:Datasets, model_name:str, 
     precision_score = precision_score(y_true, y_pred, average='macro')
     recall = recall_score(y_true, y_pred,average='macro')
     f1_score = f1_score(y_true, y_pred,average='macro')
-    #au_roc = roc_auc_score(out.detach().numpy()[data.test_mask], label_set,average='macro', multi_class='ovr')
+
+    # compute the AUC score
+    from sklearn.linear_model import LogisticRegression
+    clf = LogisticRegression( solver="liblinear" ).fit( predictions, y_true )
+    y_score = clf.predict_proba( predictions )
+    auc_roc = roc_auc_score( y_true, y_score, average='macro', multi_class='ovo' )
 
     #Print metrics
     print("\nTest metrics:")
@@ -36,11 +41,11 @@ def display_and_save(framework:Framework,dataset_name:Datasets, model_name:str, 
     print(f'Precision macro: {precision_score:.4f}')
     print(f'Recall macro: {recall:.4f}')
     print(f'F1 Score macro: {f1_score:.4f}')
-    #print(f'AU-ROC macro,ovr: {au_roc:.4f}')
+    print(f'AUC-ROC macro,ovr: {auc_roc:.4f}')
 
     cm = confusion_matrix(y_true, y_pred,normalize='true')
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
-    disp.plot()
+    disp.plot( xticks_rotation=-45 )
     plt.show()
 
     #Save metrics in json file
@@ -50,7 +55,8 @@ def display_and_save(framework:Framework,dataset_name:Datasets, model_name:str, 
         'precision_score_macro':precision_score,
         'recall_macro':recall,
         'f1_score_macro':f1_score,
-        'confusion_matrix':cm.tolist()
+        'confusion_matrix':cm.tolist(),
+        'auc_roc_macro_ovr':auc_roc,
     }
     date : str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     filename = os.path.join(
