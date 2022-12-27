@@ -8,7 +8,7 @@ import torch as torch
 import gnnbench.data.io as io
 import gnnbench.data.make_dataset as make_dataset
 from numpy import load
-from metrics import Datasets
+from metrics import BkDataset
 import torch_geometric.utils.convert as conv
 import os
 
@@ -22,7 +22,7 @@ def index_array_to_bool(index_array, length):
     bool_array[index_array] = True
     return bool_array
 
-def convert_random_split(name:Datasets):
+def convert_random_split(name:BkDataset):
     name = name.value['lower']
     print(f"\nConverting {name}")
     npzfilepath = os.path.join(npzfolderpath, f'{name}.npz')
@@ -119,7 +119,7 @@ def convert_random_split(name:Datasets):
     print(f'Saving {name} graphml to {graphml_path}')
     nx.write_graphml(G, graphml_path)
 
-def convert_public_split(dataset_info:Datasets):
+def convert_public_split(dataset_info:BkDataset):
     dataset_name = dataset_info.value['CamelCase']
     print(f"\nConverting {dataset_name}")
     pyg_dataset = Planetoid(f"/tmp/{dataset_name}", name=dataset_name, split='public')
@@ -167,10 +167,10 @@ def convert_public_split(dataset_info:Datasets):
     nx.write_graphml(G1, graphml_path)
 
 
-convert_random_split(Datasets.CORA)
-convert_random_split(Datasets.PUBMED)
-convert_random_split(Datasets.CITESEER)
+convert_random_split(BkDataset.CORA)
+convert_random_split(BkDataset.PUBMED)
+convert_random_split(BkDataset.CITESEER)
 
-convert_public_split(Datasets.CORA)
-convert_public_split(Datasets.PUBMED)
-convert_public_split(Datasets.CITESEER)
+convert_public_split(BkDataset.CORA)
+convert_public_split(BkDataset.PUBMED)
+convert_public_split(BkDataset.CITESEER)

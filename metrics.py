@@ -35,14 +35,14 @@ pubmed_mappings = {#Planetoid:Ours
     0:'1'
 }
 #Lowercase dataset names,camelcase dataset names, mappings between public splits numbers and labels
-class Datasets(Enum):
+class BkDataset(Enum):
     CORA = {'lower':'cora', 'CamelCase':'Cora', 'mappings':cora_mappings}
     CITESEER = {'lower':'citeseer', 'CamelCase':'CiteSeer', 'mappings':citeseer_mappings}
     PUBMED = {'lower':'pubmed', 'CamelCase':'PubMed', 'mappings':pubmed_mappings}
 
 
 #Displays and saves model metrics, see example below
-def display_and_save(framework:Framework,dataset_name:Datasets, model_name:str, predictions, y, class_names: list[str], exec_ms:float):
+def display_and_save(framework:Framework, dataset_name:BkDataset, model_name:str, predictions, y, class_names: list[str], exec_ms:float):
     folder_name : str = 'metrics'#folder where the metrics will be saved
 
     from sklearn.metrics import accuracy_score,roc_auc_score,f1_score,precision_score,recall_score,confusion_matrix,ConfusionMatrixDisplay
@@ -95,9 +95,9 @@ def display_and_save(framework:Framework,dataset_name:Datasets, model_name:str, 
 #Example of use
 def example():
     display_and_save(framework=Framework.PYG,
-                     dataset_name=Datasets.PUBMED,
+                     dataset_name=BkDataset.PUBMED,
                      model_name='GCN_example1',
-                     predictions=np.array([[0.1,0.2,0.3],[0.8,0.1,0.1],[0.1,0.1,0.8]]),#Output of the model
-                     y=np.array([[0,0,1],[1,0,0],[0,1,0]]),#True labels, one hot encoded
+                     predictions=np.array([[0.1,0.2,0.3],[0.8,0.1,0.1],[0.1,0.1,0.8]]),  #Output of the model
+                     y=np.array([[0,0,1],[1,0,0],[0,1,0]]),  #True labels, one hot encoded
                      class_names=['A','B','C'],
                      exec_ms=1050)
