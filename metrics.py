@@ -10,10 +10,35 @@ class Framework(Enum):
     STELLARGRAPH = 'stellargraph'
     DGL = 'dgl'
 
+citeseer_mappings = {
+    3:'DB',
+    2:'IR',
+    4:'Agents',
+    1:'ML',
+    5:'HCI',
+    0:'AI',
+}
+
+cora_mappings = {
+    3:'Neural_Networks',
+    4:'Probabilistic_Methods',
+    2:'Genetic_Algorithms',
+    0:'Theory',
+    5:'Case_Based',
+    1:'Reinforcement_Learning',
+    6:'Rule_Learning'
+}
+
+pubmed_mappings = {#Planetoid:Ours
+    2:'2',
+    1:'3',
+    0:'1'
+}
+#Lowercase dataset names,camelcase dataset names, mappings between public splits numbers and labels
 class Datasets(Enum):
-    CORA = 'cora'
-    CITESEER = 'citeseer'
-    PUBMED = 'pubmed'
+    CORA = {'lower':'cora', 'CamelCase':'Cora', 'mappings':cora_mappings}
+    CITESEER = {'lower':'citeseer', 'CamelCase':'CiteSeer', 'mappings':citeseer_mappings}
+    PUBMED = {'lower':'pubmed', 'CamelCase':'PubMed', 'mappings':pubmed_mappings}
 
 
 #Displays and saves model metrics, see example below
@@ -61,7 +86,7 @@ def display_and_save(framework:Framework,dataset_name:Datasets, model_name:str, 
     date : str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     filename = os.path.join(
         folder_name,
-        str(dataset_name.value),
+        dataset_name.value['lower'],
         f'{str(framework.value)}_{model_name}_{date}.json')
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'w') as f:
