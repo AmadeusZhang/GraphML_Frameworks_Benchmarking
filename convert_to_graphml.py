@@ -4,6 +4,7 @@ import networkx as nx
 import numpy as np
 from torch_geometric.datasets import Planetoid
 import torch as torch
+from training_hyperparameters import *
 
 import gnnbench.data.io as io
 import gnnbench.data.make_dataset as make_dataset
@@ -23,7 +24,7 @@ def index_array_to_bool(index_array, length):
     return bool_array
 
 def convert_random_split(name:BkDataset):
-    name = name.value['lower']
+    name = name.lower
     print(f"\nConverting {name}")
     npzfilepath = os.path.join(npzfolderpath, f'{name}.npz')
     data = load(npzfilepath)
@@ -120,7 +121,7 @@ def convert_random_split(name:BkDataset):
     nx.write_graphml(G, graphml_path)
 
 def convert_public_split(dataset_info:BkDataset):
-    dataset_name = dataset_info.value['CamelCase']
+    dataset_name = dataset_info.CamelCase
     print(f"\nConverting {dataset_name}")
     pyg_dataset = Planetoid(f"/tmp/{dataset_name}", name=dataset_name, split='public')
     print(pyg_dataset[0].edge_index.shape)

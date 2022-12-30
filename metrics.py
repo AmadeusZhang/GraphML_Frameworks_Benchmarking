@@ -34,16 +34,23 @@ pubmed_mappings = {#Planetoid:Ours
     1:'3',
     0:'1'
 }
-#Lowercase dataset names,camelcase dataset names, mappings between public splits numbers and labels
-class BkDataset(Enum):
-    CORA = {'lower':'cora', 'CamelCase':'Cora', 'mappings':cora_mappings}
-    CITESEER = {'lower':'citeseer', 'CamelCase':'CiteSeer', 'mappings':citeseer_mappings}
-    PUBMED = {'lower':'pubmed', 'CamelCase':'PubMed', 'mappings':pubmed_mappings}
 
+
+#Lowercase dataset names,camelcase dataset names, mappings between public splits numbers and labels
+from enum import Enum
+
+class BkDataset(Enum):
+    CORA = 'cora', 'Cora', cora_mappings
+    CITESEER = 'citeseer', 'CiteSeer', citeseer_mappings
+    PUBMED = 'pubmed', 'PubMed', pubmed_mappings
+
+    def __init__(self, lower, CamelCase, mappings):
+        self.lower = lower
+        self.CamelCase = CamelCase
+        self.mappings = mappings
 
 #Displays and saves model metrics, see example below
-def display_and_save(framework:Framework, dataset_name:BkDataset, model_name:str, predictions, y, class_names: list[str], exec_ms:float):
-    folder_name : str = 'metrics'#folder where the metrics will be saved
+def display_and_save(framework:Framework, dataset_name:BkDataset, model_name:str, predictions, y, class_names: list[str], exec_ms:float = 0,folder_name : str = 'metrics'):
 
     from sklearn.metrics import accuracy_score,roc_auc_score,f1_score,precision_score,recall_score,confusion_matrix,ConfusionMatrixDisplay
     y_pred = predictions.argmax(axis=1)  # Use the class with highest probability.
@@ -84,9 +91,11 @@ def display_and_save(framework:Framework, dataset_name:BkDataset, model_name:str
         'auc_roc_macro_ovr':auc_roc,
     }
     date : str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    print("File location using os.getcwd():", os.getcwd())
+
     filename = os.path.join(
         folder_name,
-        dataset_name.value['lower'],
+        dataset_name.lower,
         f'{str(framework.value)}_{model_name}_{date}.json')
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'w') as f:

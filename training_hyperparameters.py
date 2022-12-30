@@ -11,6 +11,7 @@ class HyperparameterGiver:
         self.dropout = None
         self.hidden_size = None
         self.l2_regularization = None
+        self.seed = 42 #Todo check the actual seed from the paper
 
 
 class gcnHG(HyperparameterGiver):
