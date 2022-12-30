@@ -5,7 +5,7 @@ from torch import Tensor
 from torch_geometric.data import Data
 from collections import Counter
 from metrics import *
-from training_hyperparameters import HyperparameterGiver
+from constants import HyperparameterGiver
 
 
 # Converts a module to a module usable by pytorch geometric sequential
@@ -79,6 +79,7 @@ def train(model: torch.nn.Module, data: Data, parameters: HyperparameterGiver) -
     optimizer = torch.optim.Adam(model.parameters(), lr=parameters.learning_rate, weight_decay=5e-4)
     loss_fn = torch.nn.CrossEntropyLoss()
     best_val_loss = float("inf")
+    best_model = None
     best_epoch = 0
     for epoch in range(parameters.epochs):
         loss, acc = train_step(model, data, optimizer, loss_fn, parameters.l2_regularization)
@@ -91,7 +92,10 @@ def train(model: torch.nn.Module, data: Data, parameters: HyperparameterGiver) -
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             best_epoch = epoch
+            best_model = model.state_dict()
         elif epoch - best_epoch > parameters.patience:
+            print(f"Restoring weights from epoch {best_epoch}")
+            model.load_state_dict(best_model)
             break
     return history
 
@@ -110,30 +114,6 @@ def plot_history(history: History):
     ax[1].set_ylabel("Accuracy")
     ax[1].legend()
     plt.show()
-
-
-def train_and_eval(model: torch.nn.Module, data: Data, parameters: HyperparameterGiver, labels):
-    # Set parameters
-    torch.manual_seed(parameters.seed)
-    # Copy data to GPU if available
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    data = data.to(device)
-
-    history = train(model, data, parameters)
-    plot_history(history)
-
-    # Test the model and save the results.
-    model.eval()
-    out = model(data.x, data.edge_index)
-    y_cat = data.y[data.test_mask].detach().clone()
-    display_and_save(framework=Framework.PYG,
-                     dataset_name=BkDataset.CORA,
-                     model_name=model.__class__.__name__,
-                     predictions=out[data.test_mask].cpu().detach().numpy(),
-                     y=y_cat.cpu().detach().numpy(),
-                     class_names=labels,
-                     folder_name='../metrics',
-                     exec_ms=0)
 
 def delete_graph_attributes(G):
     # delete all the graph attributes, since they are not useful for node classification

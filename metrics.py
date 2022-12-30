@@ -2,58 +2,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 import json
-from enum import Enum
+from constants import *
 import os
 
-class Framework(Enum):
-    PYG = 'pyg'
-    STELLARGRAPH = 'stellargraph'
-    DGL = 'dgl'
-
-citeseer_mappings = {
-    3:'DB',
-    2:'IR',
-    4:'Agents',
-    1:'ML',
-    5:'HCI',
-    0:'AI',
-}
-
-cora_mappings = {
-    3:'Neural_Networks',
-    4:'Probabilistic_Methods',
-    2:'Genetic_Algorithms',
-    0:'Theory',
-    5:'Case_Based',
-    1:'Reinforcement_Learning',
-    6:'Rule_Learning'
-}
-
-pubmed_mappings = {#Planetoid:Ours
-    2:'2',
-    1:'3',
-    0:'1'
-}
 
 
-#Lowercase dataset names,camelcase dataset names, mappings between public splits numbers and labels
-from enum import Enum
-
-class BkDataset(Enum):
-    CORA = 'cora', 'Cora', cora_mappings
-    CITESEER = 'citeseer', 'CiteSeer', citeseer_mappings
-    PUBMED = 'pubmed', 'PubMed', pubmed_mappings
-
-    def __init__(self, lower, CamelCase, mappings):
-        self.lower = lower
-        self.CamelCase = CamelCase
-        self.mappings = mappings
 
 #Displays and saves model metrics, see example below
-def display_and_save(framework:Framework, dataset_name:BkDataset, model_name:str, predictions, y, class_names: list[str], exec_ms:float = 0,folder_name : str = 'metrics'):
+def display_and_save(framework:Frameworks, dataset_name:Datasets, model_name:str, predictions, y, class_names: list[str], exec_ms:float = 0,folder_name : str = 'metrics'):
 
     from sklearn.metrics import accuracy_score,roc_auc_score,f1_score,precision_score,recall_score,confusion_matrix,ConfusionMatrixDisplay
-    y_pred = predictions.argmax(axis=1)  # Use the class with highest probability.
+    y_pred = predictions.argmax(axis=1)  # Use the class with the highest probability.
     y_true = y.argmax(axis=1)
 
     accuracy = accuracy_score(y_true, y_pred)
@@ -91,22 +50,22 @@ def display_and_save(framework:Framework, dataset_name:BkDataset, model_name:str
         'auc_roc_macro_ovr':auc_roc,
     }
     date : str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    print("File location using os.getcwd():", os.getcwd())
 
     filename = os.path.join(
         folder_name,
         dataset_name.lower,
-        f'{str(framework.value)}_{model_name}_{date}.json')
+        f'{str(framework.lower)}_{model_name}_{date}.json')
+    print(f'Saving metrics to {filename}')
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, 'w') as f:
         json.dump(metrics, f)
 
 #Example of use
 def example():
-    display_and_save(framework=Framework.PYG,
-                     dataset_name=BkDataset.PUBMED,
-                     model_name='GCN_example1',
+    display_and_save(framework=Frameworks.PYG,
+                     dataset_name=Datasets.PUBMED,
+                     model_name=Models.GCN.lower,
                      predictions=np.array([[0.1,0.2,0.3],[0.8,0.1,0.1],[0.1,0.1,0.8]]),  #Output of the model
                      y=np.array([[0,0,1],[1,0,0],[0,1,0]]),  #True labels, one hot encoded
-                     class_names=['A','B','C'],
+                     class_names=Datasets.PUBMED.mappings.values(),
                      exec_ms=1050)

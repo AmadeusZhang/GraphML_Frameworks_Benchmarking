@@ -1,7 +1,7 @@
 import dgl.nn.pytorch.conv as dglnn
 import torch.nn as nn
 import torch.nn.functional as F
-from training_hyperparameters import gatHG
+from constants import gatHG
 
 
 class GAT(nn.Module):

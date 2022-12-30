@@ -5,7 +5,7 @@ Credits: https://github.com/dmlc/dgl/blob/master/examples/pytorch/gcn/train.py
 import dgl.nn.pytorch.conv as dglnn
 import torch.nn as nn
 import torch.nn.functional as F
-from training_hyperparameters import gcnHG
+from constants import gcnHG
 
 
 class GCN(nn.Module):

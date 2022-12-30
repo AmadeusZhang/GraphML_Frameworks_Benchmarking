@@ -1,33 +1,22 @@
 from model_runner import ModelRunner
-import networkx as nx
-import matplotlib.pyplot as plt
-import numpy as np
 import torch_geometric.utils.convert as conv
-import torch
-from torch_geometric.transforms import RandomNodeSplit
-from torch_geometric.nn import GCNConv, GATConv, SAGEConv
 from torch_geometric.nn.sequential import Sequential
-import torch.nn.functional as F
-import training_hyperparameters as hp
-from pyg_utils import *
-import os
-import json
-from summary import ssummary
+from pyg_models.pyg_utils import *
+from pyg_models.summary import ssummary
 from metrics import *
 
 this_folder_path = os.path.dirname(os.path.abspath(__file__))
-file_path = os.path.join(this_folder_path, "../data", "planetoid_split", "cora.graphml")
-label = 'class_label'
 device = "cuda" if torch.cuda.is_available() else "cpu"
-num_features = 1433
-classes = None
-num_classes = None
 
 
 class PygModelRunner(ModelRunner):
 
-    def load_and_convert(self, bk_dataset: BkDataset):
-        print("Loading and converting data")
+    def load_and_convert(self, bk_dataset: Datasets):
+        label = 'class_label'
+        file_path = os.path.join(this_folder_path,
+                                 "../data",
+                                 "planetoid_split" if bk_dataset.planetoid_split else "random_split",
+                                 f'{bk_dataset.name.lower()}.graphml')
         G = load_graph(file_path)
         class_labels = bk_dataset.mappings
         classes = convert_attr_to_number(graph=G, attr_name=label, class_labels=class_labels)
@@ -38,8 +27,9 @@ class PygModelRunner(ModelRunner):
         print(G.graph, type(G.graph))
 
         print("Loading x...")
-
-        data: Data = conv.from_networkx(G, group_node_attrs=[f'w.{i}' for i in range(num_features)],
+        self.G = G
+        nodes_to_load = [attr for attr in list(G.nodes(data=True))[0][1].keys() if 'w.' in attr]
+        data: Data = conv.from_networkx(G, group_node_attrs=nodes_to_load,
                                         group_edge_attrs=None)
 
         data.x = data.x.float()
@@ -60,66 +50,94 @@ class PygModelRunner(ModelRunner):
         print(data)
         print(data.x)
         self.data = data
+        self.bk_dataset = bk_dataset
 
-    def create_model(self):
+    def create_models(self):
         create_gcn(self)
         create_graph_sage(self)
         create_gat(self)
 
-    def train_model(self):
-        class_labels = {}
-        model = self.models['gcn']
-        params = hp.gcnHG()
+    def reset_weights(self, model: Models):
+        self.create_models()  # todo more performant version
 
-        train_and_eval(model=model.to(torch.device(device)),data=self.data, labels=class_labels.values(),parameters=params)
+    def train_model(self, model: Models, split_num: int = 0):
+        self.data.train_mask = self.data[f'train_mask.{split_num}'].bool()
+        self.data.test_mask = self.data[f'test_mask.{split_num}'].bool()
+        self.data.val_mask = self.data[f'validation_mask.{split_num}'].bool()
+
+        pyg_model = self.models[model]
+        # Set parameters
+        torch.manual_seed(model.params.seed)
+        # Copy data to GPU if available
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        data = self.data.to(device)
+
+        history = train(pyg_model, data, model.params)
+        plot_history(history)
+
+        # Test the model and save the results.
+        pyg_model.eval()
+        out = pyg_model(data.x, data.edge_index)
+        y_cat = data.y[data.test_mask].detach().clone()
+        display_and_save(framework=Frameworks.PYG,
+                         dataset_name=self.bk_dataset,
+                         model_name=model.lower,
+                         predictions=out[data.test_mask].cpu().detach().numpy(),
+                         y=y_cat.cpu().detach().numpy(),
+                         class_names=self.bk_dataset.class_names(),
+                         folder_name='metrics',
+                         exec_ms=0)
 
 
 def create_gcn(model_runner: PygModelRunner):
     from torch_geometric.nn.models import GCN
-    hidden_dim = 16
+    hidden_dim = Models.GCN.params.hidden_size
+    dropout = Models.GCN.params.dropout
     model = Sequential('x, edge_index', [
         (GCN(in_channels=model_runner.data.num_features, hidden_channels=hidden_dim, num_layers=2,
              out_channels=model_runner.data.y.shape[1],
-             dropout=0.5),
+             dropout=dropout),
          'x, edge_index -> x'),
         torch.nn.LogSoftmax(dim=1)
     ])
-    # model = GCN(in_channels=in_features, hidden_channels=16,act='relu',num_layers=2,out_channels=num_classes,dropout=0.5)
     print(
         ssummary(model, model_runner.data.x.cpu(), model_runner.data.edge_index.cpu(), max_depth=50, leaf_module=None))
-    model_runner.models['gcn'] = model
+    model_runner.models[Models.GCN] = model
 
 
 def create_graph_sage(model_runner: PygModelRunner):
     from torch_geometric.nn.models import GraphSAGE
+    hidden_dim = Models.GRAPHSAGE.params.hidden_size
+    dropout = Models.GRAPHSAGE.params.dropout
     model = Sequential('x, edge_index', [
-        (GraphSAGE(in_channels=model_runner.data.num_features, hidden_channels=16, num_layers=2,
+        (GraphSAGE(in_channels=model_runner.data.num_features, hidden_channels=hidden_dim, num_layers=2,
                    out_channels=model_runner.data.y.shape[1],
-                   dropout=0.5),
+                   dropout=dropout),
          'x, edge_index -> x'),
         torch.nn.LogSoftmax(dim=1)
     ])
     print(
         ssummary(model, model_runner.data.x.cpu(), model_runner.data.edge_index.cpu(), max_depth=50, leaf_module=None))
-    model_runner.models['graph_sage'] = model
+    model_runner.models[Models.GRAPHSAGE] = model
 
 
 def create_gat(model_runner: PygModelRunner):
     from torch_geometric.nn.models import GAT
+    hidden_dim = Models.GAT.params.hidden_size
+    dropout = Models.GAT.params.dropout
     model = Sequential('x, edge_index', [
-        (GAT(in_channels=model_runner.data.num_features, hidden_channels=8, num_layers=2,
+        (GAT(in_channels=model_runner.data.num_features, hidden_channels=hidden_dim, num_layers=2,
              out_channels=model_runner.data.y.shape[1],
-             dropout=0.5),
+             dropout=dropout),
          'x, edge_index -> x'),
         torch.nn.LogSoftmax(dim=1)
     ])
     print(
         ssummary(model, model_runner.data.x.cpu(), model_runner.data.edge_index.cpu(), max_depth=50, leaf_module=None))
-    model_runner.models['gat'] = model
+    model_runner.models[Models.GAT] = model
 
 
 # main function
 if __name__ == '__main__':
     pyg_runner: PygModelRunner = PygModelRunner()
-
     pyg_runner.run_all()
