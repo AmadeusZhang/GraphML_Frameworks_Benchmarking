@@ -28,7 +28,6 @@ class ModelRunner:
     def load_and_convert(self, bk_dataset: Datasets):
         self.load(bk_dataset)
         self.data = None
-        self.bk_dataset = bk_dataset
 
     def create_models(self):
         print("Create model, edit this to create all the models in your framework")
