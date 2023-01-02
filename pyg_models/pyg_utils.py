@@ -12,12 +12,6 @@ from constants import HyperparameterGiver
 # def seq(module):
 #     return (module, 'x, edge_index -> x')
 
-# load the graph from the graphml file
-def load_graph(file_path):
-    G = nx.read_graphml(file_path)
-    return G
-
-
 def apply_regularization(model: torch.nn.Module, loss, l2_reg: float):
     for name, params in model.state_dict().items():
         if name.startswith("conv1"):
@@ -138,22 +132,6 @@ def delete_graph_attributes(G):
 
     for attr in attrs:
         del G.graph[attr]
-
-
-# Converts a string attribute to a number and returns the list of all the possible values of that attribute
-def convert_attr_to_number(graph, attr_name: str, class_labels: dict[int:str]):
-    classes = []
-    if len(class_labels) == 0:
-        for id in graph.nodes:
-            classes.append(graph.nodes[id][attr_name])
-        print(f"No class labels, printing counter of classes {Counter(classes)}")
-        return Counter(classes)
-
-    mappings = {w: k for k, w in class_labels.items()}
-    mappings = {**mappings, **{i: i for i in range(len(class_labels))}}
-    for id in graph.nodes:
-        graph.nodes[id][attr_name] = mappings[graph.nodes[id][attr_name]]
-    return class_labels.values()
 
 
 import torch

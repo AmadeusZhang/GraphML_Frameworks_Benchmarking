@@ -1,42 +1,35 @@
-from model_runner import ModelRunner
+from model_runner import *
 import torch_geometric.utils.convert as conv
 from torch_geometric.nn.sequential import Sequential
 from pyg_models.pyg_utils import *
 from pyg_models.summary import ssummary
 from metrics import *
 
-this_folder_path = os.path.dirname(os.path.abspath(__file__))
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class PygModelRunner(ModelRunner):
 
     def load_and_convert(self, bk_dataset: Datasets):
+        self.load(bk_dataset)
         label = 'class_label'
-        file_path = os.path.join(this_folder_path,
-                                 "../data",
-                                 "planetoid_split" if bk_dataset.planetoid_split else "random_split",
-                                 f'{bk_dataset.name.lower()}.graphml')
-        G = load_graph(file_path)
-        class_labels = bk_dataset.mappings
-        classes = convert_attr_to_number(graph=G, attr_name=label, class_labels=class_labels)
-        num_classes = len(classes)
 
         # Delete unused graph attributes
-        delete_graph_attributes(G)
-        print(G.graph, type(G.graph))
+        delete_graph_attributes(self.G)
+        print(self.G.graph, type(self.G.graph))
 
         print("Loading x...")
-        self.G = G
-        nodes_to_load = [attr for attr in list(G.nodes(data=True))[0][1].keys() if 'w.' in attr]
-        data: Data = conv.from_networkx(G, group_node_attrs=nodes_to_load,
+
+        nodes_to_load = [attr for attr in list(self.G.nodes(data=True))[0][1].keys() if 'w.' in attr]
+        data: Data = conv.from_networkx(self.G, group_node_attrs=nodes_to_load,
                                         group_edge_attrs=None)
 
         data.x = data.x.float()
 
         data.y = data[label].long()
         # one hot encode labels
-        data.y = torch.nn.functional.one_hot(data.y.long(), num_classes=num_classes).to(torch.float)
+        data.y = torch.nn.functional.one_hot(data.y.long(), num_classes=self.num_classes).to(torch.float)
 
         split_num = 0
 
