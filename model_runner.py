@@ -24,6 +24,7 @@ class ModelRunner:
         classes = convert_attr_to_number(graph=G, attr_name=label, class_labels=class_labels)
         self.num_classes = len(classes)
         self.G = G
+        self.bk_dataset = bk_dataset
     def load_and_convert(self, bk_dataset: Datasets):
         self.load(bk_dataset)
         self.data = None

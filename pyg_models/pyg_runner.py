@@ -43,7 +43,7 @@ class PygModelRunner(ModelRunner):
         print(data)
         print(data.x)
         self.data = data
-        self.bk_dataset = bk_dataset
+
 
     def create_models(self):
         create_gcn(self)
