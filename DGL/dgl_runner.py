@@ -75,7 +75,7 @@ class DglModelRunner(ModelRunner):
         data = self.data.to(device)
 
         history = self.train(data, features, labels, masks, pyg_model)
-        # plot_history(history)
+        plot_history(history)
 
         # Test the model and save the results.
         logits = pyg_model(self.data, features.float())
@@ -106,17 +106,17 @@ class DglModelRunner(ModelRunner):
             logits = model(g, features.float())
             loss = loss_fcn(logits[train_mask], labels[train_mask])
             val_loss = loss_fcn(logits[val_mask], labels[val_mask])
+            acc = self.evaluate(g, features, labels, train_mask, model)
+            val_acc = self.evaluate(g, features, labels, val_mask, model)
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            acc = self.evaluate(g, features, labels, train_mask, model)
-            val_acc = self.evaluate(g, features, labels, val_mask, model)
 
             # print(loss, type(loss))
-            history.loss.append(loss)
+            history.loss.append(loss.item())
             history.acc.append(acc)
-            history.val_loss.append(val_loss)
+            history.val_loss.append(val_loss.item())
             history.val_acc.append(val_acc)
             history.print_last()
 
