@@ -1,0 +1,49 @@
+Model: "model"
+__________________________________________________________________________________________________
+ Layer (type)                   Output Shape         Param #     Connected to                     
+==================================================================================================
+ input_2 (InputLayer)           [(None, 10, 1433)]   0           []                               
+                                                                                                  
+ input_3 (InputLayer)           [(None, 100, 1433)]  0           []                               
+                                                                                                  
+ input_1 (InputLayer)           [(None, 1, 1433)]    0           []                               
+                                                                                                  
+ reshape (Reshape)              (None, 1, 10, 1433)  0           ['input_2[0][0]']                
+                                                                                                  
+ reshape_1 (Reshape)            (None, 10, 10, 1433  0           ['input_3[0][0]']                
+                                )                                                                 
+                                                                                                  
+ dropout_1 (Dropout)            (None, 1, 1433)      0           ['input_1[0][0]']                
+                                                                                                  
+ dropout (Dropout)              (None, 1, 10, 1433)  0           ['reshape[0][0]']                
+                                                                                                  
+ dropout_3 (Dropout)            (None, 10, 1433)     0           ['input_2[0][0]']                
+                                                                                                  
+ dropout_2 (Dropout)            (None, 10, 10, 1433  0           ['reshape_1[0][0]']              
+                                )                                                                 
+                                                                                                  
+ mean_aggregator (MeanAggregato  multiple            45888       ['dropout_1[0][0]',              
+ r)                                                               'dropout[0][0]',                
+                                                                  'dropout_3[0][0]',              
+                                                                  'dropout_2[0][0]']              
+                                                                                                  
+ reshape_2 (Reshape)            (None, 1, 10, 32)    0           ['mean_aggregator[1][0]']        
+                                                                                                  
+ dropout_5 (Dropout)            (None, 1, 32)        0           ['mean_aggregator[0][0]']        
+                                                                                                  
+ dropout_4 (Dropout)            (None, 1, 10, 32)    0           ['reshape_2[0][0]']              
+                                                                                                  
+ mean_aggregator_1 (MeanAggrega  (None, 1, 32)       1056        ['dropout_5[0][0]',              
+ tor)                                                             'dropout_4[0][0]']              
+                                                                                                  
+ reshape_3 (Reshape)            (None, 32)           0           ['mean_aggregator_1[0][0]']      
+                                                                                                  
+ lambda (Lambda)                (None, 32)           0           ['reshape_3[0][0]']              
+                                                                                                  
+ dense (Dense)                  (None, 7)            231         ['lambda[0][0]']                 
+                                                                                                  
+==================================================================================================
+Total params: 47,175
+Trainable params: 47,175
+Non-trainable params: 0
+__________________________________________________________________________________________________
