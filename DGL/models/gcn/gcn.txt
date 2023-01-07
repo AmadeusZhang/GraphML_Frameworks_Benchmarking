@@ -1,0 +1,37 @@
+Model: "model"
+__________________________________________________________________________________________________
+ Layer (type)                   Output Shape         Param #     Connected to
+==================================================================================================
+ input_1 (InputLayer)           [(1, 2708, 1433)]    0           []
+
+ input_3 (InputLayer)           [(1, None, 2)]       0           []
+
+ input_4 (InputLayer)           [(1, None)]          0           []
+
+ dropout (Dropout)              (1, 2708, 1433)      0           ['input_1[0][0]']
+
+ squeezed_sparse_conversion (Sq  (2708, 2708)        0           ['input_3[0][0]',
+ ueezedSparseConversion)                                          'input_4[0][0]']
+
+ graph_convolution (GraphConvol  (1, None, 32)       45888       ['dropout[0][0]',
+ ution)                                                           'squeezed_sparse_conversion[0][0
+                                                                 ]']
+
+ dropout_1 (Dropout)            (1, None, 32)        0           ['graph_convolution[0][0]']
+
+ graph_convolution_1 (GraphConv  (1, None, 32)       1056        ['dropout_1[0][0]',
+ olution)                                                         'squeezed_sparse_conversion[0][0
+                                                                 ]']
+
+ input_2 (InputLayer)           [(1, None)]          0           []
+
+ gather_indices (GatherIndices)  (1, None, 32)       0           ['graph_convolution_1[0][0]',
+                                                                  'input_2[0][0]']
+
+ dense (Dense)                  (1, None, 7)         231         ['gather_indices[0][0]']
+
+==================================================================================================
+Total params: 47,175
+Trainable params: 47,175
+Non-trainable params: 0
+__________________________________________________________________________________________________
