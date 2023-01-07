@@ -16,6 +16,8 @@ import tensorflow as tf
 from tensorflow import keras
 from keras import layers, optimizers, losses, Model
 
+from sklearn import preprocessing
+
 this_folder_path = os.path.dirname( os.path.abspath( __file__ ) )
 
 class Data( object ) :
@@ -74,17 +76,58 @@ class SGModelRunner( ModelRunner ) :
         create_gcn(self)
         create_graph_sage(self)
         create_gat(self)
-    
+
+
+    # TODO: this functions needs to be tested
     def train( self, model: Models, split_num: int = 0 ) :
-        # Split data
+
         # TODO: random split
 
-        # convert train/test/val masks to pandas series, with node id as index
-        train_y = self.data.train_mask
+        sg_model = self.models[model]
 
+        # train/test/val masks are pandas Series with node ids as index and class label as value
+        train_mask = self.data.train_mask
+        test_mask = self.data.test_mask
+        val_mask = self.data.val_mask
+
+        # Create One-Hot encoding for categorical labels
+        le = preprocessing.LabelEncoder()
+        train_targets = le.fit_transform(train_mask)
+        test_targets = le.fit_transform(test_mask)
+        val_targets = le.fit_transform(val_mask)
+
+        # create generators
+        train_gen = sg_model.generator.flow(train_mask.index, train_targets, shuffle=True)
+        test_gen = sg_model.generator.flow(test_mask.index, test_targets)
+        val_gen = sg_model.generator.flow(val_mask.index, val_targets)
 
         # Train model
+        history = sg_model.fit(
+            train_gen,
+            epochs=model.params.epochs, # grape the epochs from the constants file
+            validation_data=val_gen,
+            verbose=0, # if want to see this progress, set to 1
+            shuffle=False
+        )
 
+        # Test the model
+        y_pred = sg_model.predict(test_gen)
+        y_pred = np.argmax(y_pred, axis=1)
+
+        # One-Hot encoding for categorical labels
+        y_true = pd.get_dummies(test_targets.values).values
+
+        # Save results
+        display_and_save(
+            framework=Frameworks.STELLARGRAPH,
+            dataset_name=self.bk_dataset,
+            model_name=model.lower,
+            predictions=y_pred,
+            y = y_true,
+            class_names=self.bk_dataset.class_names(),
+            folder_name='metrics',
+            exec_ms=0
+        )
 
 
 def create_gcn( modelrunner: SGModelRunner ) :
@@ -119,6 +162,8 @@ def create_gcn( modelrunner: SGModelRunner ) :
 
     # save model to class
     modelrunner.models[Models.GCN] = model
+
+    # TODO: save generator to class
 
 
 def create_graph_sage( modelrunner: SGModelRunner ) :
