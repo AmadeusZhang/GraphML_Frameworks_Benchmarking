@@ -88,10 +88,10 @@ class gatHG(HyperparameterGiver):
     def __init__(self):
         super().__init__()
         self.learning_rate = 0.01
-        self.dropout = 0.3
+        self.dropout = 0.6
         self.hidden_size = 64
         self.l2_regularization = 0.01
-        self.att_dropout = 0.6
+        self.att_dropout = 0.3
 
 
 class graphsageHG(HyperparameterGiver):
