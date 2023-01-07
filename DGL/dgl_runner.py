@@ -2,10 +2,11 @@ from model_runner import *
 import dgl
 from constants import Datasets
 import torch
-from pyg_models.pyg_utils import History, plot_history
-from metrics import display_and_save
+from utils import display_and_save, History, plot_history
 import torch.nn as nn
 import torch.nn.functional as F
+
+torch.manual_seed(42)
 
 
 class DglModelRunner(ModelRunner):
@@ -14,9 +15,7 @@ class DglModelRunner(ModelRunner):
         self.load(bk_dataset)
         label = 'class_label'
 
-        # Delete unused graph attributes
-        print(self.G.graph, type(self.G.graph))
-        print(list(self.G.nodes(data=True))[0])
+        # print(list(self.G.nodes(data=True))[0])
 
         print("Loading x...")
 
@@ -49,7 +48,7 @@ class DglModelRunner(ModelRunner):
             f"test={graph.ndata['test_mask.0'].sum().item()},"
             f"val={graph.ndata['val_mask.0'].sum().item()}")
 
-        print(graph)
+        # print(graph)
         # print(graph.ndata)
 
         self.data = graph
@@ -75,7 +74,11 @@ class DglModelRunner(ModelRunner):
         data = self.data.to(device)
 
         history = self.train(data, features, labels, masks, pyg_model)
-        plot_history(history)
+        plot_history(history,
+                     framework=Frameworks.DGL,
+                     dataset_name=self.bk_dataset,
+                     model_name=model.lower,
+                     folder_name='metrics',)
 
         # Test the model and save the results.
         logits = pyg_model(self.data, features.float())
@@ -164,8 +167,9 @@ def create_gat(model_runner: DglModelRunner):
 # main function
 if __name__ == '__main__':
     dgl_runner: DglModelRunner = DglModelRunner()
-    # dgl_runner.load_and_convert(Datasets.CORA)
-    # dgl_runner.create_models()
-    # dgl_runner.train_model(Models.GAT, 0)
-    dgl_runner.run_all()
+    # dgl_runner.run_all()
+    dgl_runner.load_and_convert(Datasets.CORA)
+    dgl_runner.create_models()
+    dgl_runner.train_model(Models.GAT, 0)
+
 

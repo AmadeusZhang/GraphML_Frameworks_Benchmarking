@@ -4,8 +4,9 @@ import torch
 from torch import Tensor
 from torch_geometric.data import Data
 from collections import Counter
-from metrics import *
+from utils import *
 from constants import HyperparameterGiver
+from utils import History
 
 
 # Converts a module to a module usable by pytorch geometric sequential
@@ -50,24 +51,6 @@ def eval_step(model: torch.nn.Module, data: Data, loss_fn, mask: Tensor):
     return loss.item(), acc
 
 
-class History:
-    loss: list[float]
-    acc: list[float]
-    val_loss: list[float]
-    val_acc: list[float]
-
-    def __init__(self):
-        self.loss = []
-        self.acc = []
-        self.val_loss = []
-        self.val_acc = []
-
-    def print_last(self):
-        epoch = len(self.loss)
-        print(
-            f"Epoch {epoch}: loss={self.loss[-1]:.4f}, acc={self.acc[-1]:.4f}, val_loss={self.val_loss[-1]:.4f}, val_acc={self.val_acc[-1]:.4f}")
-
-
 def train(model: torch.nn.Module, data: Data, parameters: HyperparameterGiver) -> History:
     history = History()
     optimizer = torch.optim.Adam(model.parameters(), lr=parameters.learning_rate, weight_decay=5e-4)
@@ -94,21 +77,6 @@ def train(model: torch.nn.Module, data: Data, parameters: HyperparameterGiver) -
     return history
 
 
-def plot_history(history: History):
-    fig, ax = plt.subplots(1, 2, figsize=(12, 4))
-    ax[0].plot(history.loss, label="loss")
-    ax[0].plot(history.val_loss, label="val_loss")
-    ax[0].set_xlabel("Epoch")
-    ax[0].set_ylabel("Loss")
-    ax[0].legend()
-
-    ax[1].plot(history.acc, label="acc")
-    ax[1].plot(history.val_acc, label="val_acc")
-    ax[1].set_xlabel("Epoch")
-    ax[1].set_ylabel("Accuracy")
-    ax[1].legend()
-    plt.show()
-
 def delete_graph_attributes(G):
     # delete all the graph attributes, since they are not useful for node classification
 
@@ -132,9 +100,6 @@ def delete_graph_attributes(G):
 
     for attr in attrs:
         del G.graph[attr]
-
-
-import torch
 
 
 def compareData(data1, data2):
